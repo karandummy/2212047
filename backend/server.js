@@ -17,25 +17,72 @@ function generateShortcode(length = 6) {
   return code;
 }
 
-app.post("/shorturls",(req, res) => {
+
+const urlStore = {};
+const clickStats = {};
+app.post("/shorturls", (req, res) => {
   const { url, validity, shortcode } = req.body;
 
   if (!url || typeof url !== "string" || !/^https?:\/\/.+/.test(url)) {
     return res.status(400).json({ error: "Invalid or missing URL" });
   }
 
-
   const code = shortcode || generateShortcode();
-
   const minutes = typeof validity === "number" && validity > 0 ? validity : 30;
   const expiryDate = new Date(Date.now() + minutes * 60000).toISOString();
-
   const shortLink = `https://localhost:${PORT}/${code}`;
+
+
+  urlStore[code] = {
+    url,
+    createdAt: new Date().toISOString(),
+    expiry: expiryDate,
+    shortLink,
+    clicks: 0,
+    clickDetails: []
+  };
 
   res.status(201).json({
     shortLink,
     expiry: expiryDate
   });
 });
+
+
+app.get("/shorturls/:shortcode", (req, res) => {
+  const { shortcode } = req.params;
+  const info = urlStore[shortcode];
+
+  if (!info) {
+    return res.status(404).json({ error: "Shortcode not found" });
+  }
+
+  res.json({
+    totalClicks: info.clicks,
+    url: info.url,
+    createdAt: info.createdAt,
+    expiry: info.expiry,
+    clickDetails: info.clickDetails 
+  });
+});
+
+
+app.get("/:shortcode", (req, res) => {
+  const { shortcode } = req.params;
+  const info = urlStore[shortcode];
+  if (!info) return res.status(404).send("Not found");
+
+  info.clicks += 1;
+  info.clickDetails.push({
+    timestamp: new Date().toISOString(),
+    referrer: req.get("referer") || "",
+    geo: "unknown" 
+  });
+
+  res.redirect(info.url);
+});
+
+
+
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

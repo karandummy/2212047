@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 
 const LOG_API_URL = "http://20.244.56.144/evaluation-service/logs";
+const LOG_ID="78ecb9de-2a8b-45f0-941f-cb0b47dbf002";
 
 app.use(async (req, res, next) => {
   const logData = {
