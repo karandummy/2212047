@@ -30,7 +30,7 @@ app.post("/shorturls", (req, res) => {
   const code = shortcode || generateShortcode();
   const minutes = typeof validity === "number" && validity > 0 ? validity : 30;
   const expiryDate = new Date(Date.now() + minutes * 60000).toISOString();
-  const shortLink = `https://localhost:${PORT}/${code}`;
+  const shortLink = `http://localhost:${PORT}/${code}`;
 
 
   urlStore[code] = {
@@ -41,6 +41,7 @@ app.post("/shorturls", (req, res) => {
     clicks: 0,
     clickDetails: []
   };
+   console.log("URL Store initialized:", urlStore);
 
   res.status(201).json({
     shortLink,
@@ -49,10 +50,12 @@ app.post("/shorturls", (req, res) => {
 });
 
 
+
 app.get("/shorturls/:shortcode", (req, res) => {
   const { shortcode } = req.params;
   const info = urlStore[shortcode];
-
+  console.log(info);
+  console.log("URL Store initialized:", urlStore);
   if (!info) {
     return res.status(404).json({ error: "Shortcode not found" });
   }
@@ -66,7 +69,6 @@ app.get("/shorturls/:shortcode", (req, res) => {
   });
 });
 
-
 app.get("/:shortcode", (req, res) => {
   const { shortcode } = req.params;
   const info = urlStore[shortcode];
@@ -75,8 +77,6 @@ app.get("/:shortcode", (req, res) => {
   info.clicks += 1;
   info.clickDetails.push({
     timestamp: new Date().toISOString(),
-    referrer: req.get("referer") || "",
-    geo: "unknown" 
   });
 
   res.redirect(info.url);
